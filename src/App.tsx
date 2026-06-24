@@ -188,12 +188,15 @@ export default function App() {
     }
   };
 
-  const handleRegisterCustomer = async (newCust: Customer) => {
+  const handleRegisterCustomer = async (newCust: Customer): Promise<Customer | null> => {
     try {
-      applySnapshot(await createCustomer(newCust));
+      const { customer, snapshot } = await createCustomer(newCust);
+      applySnapshot(snapshot);
       showHeaderAlert(`Customer ${newCust.name} successfully registered.`, 'success');
+      return customer;
     } catch (e) {
       showHeaderAlert(errMsg(e), 'alert');
+      return null;
     }
   };
 

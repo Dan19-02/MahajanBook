@@ -110,8 +110,8 @@ export const createProduct = (product: Omit<Product, 'id' | 'createdAt'>): Promi
 export const updateStock = (productId: string, currentStock: number): Promise<Snapshot> =>
   request<Snapshot>(`/api/products/${productId}/stock`, { method: 'PATCH', body: { currentStock } });
 
-export const createCustomer = (customer: Omit<Customer, 'id' | 'createdAt' | 'balance'>): Promise<Snapshot> =>
-  request<Snapshot>('/api/customers', { method: 'POST', body: customer });
+export const createCustomer = (customer: Omit<Customer, 'id' | 'createdAt' | 'balance'>): Promise<{ customer: Customer; snapshot: Snapshot }> =>
+  request<{ customer: Customer; snapshot: Snapshot }>('/api/customers', { method: 'POST', body: customer });
 
 export interface CreateInvoicePayload {
   customerId: string;

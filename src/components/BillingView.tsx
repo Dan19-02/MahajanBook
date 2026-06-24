@@ -7,7 +7,7 @@ interface BillingViewProps {
   products: Product[];
   customers: Customer[];
   onAddInvoice: (payload: CreateInvoicePayload) => Promise<boolean>;
-  onQuickAddCustomer: (customer: Customer) => void;
+  onQuickAddCustomer: (customer: Customer) => Promise<Customer | null>;
 }
 
 export default function BillingView({ products, customers, onAddInvoice, onQuickAddCustomer }: BillingViewProps) {
@@ -45,13 +45,13 @@ export default function BillingView({ products, customers, onAddInvoice, onQuick
   }, [customers, selectedCustomerId]);
 
   // Handle Quick Add Customer
-  const handleQuickCustomerSubmit = (e: React.FormEvent) => {
+  const handleQuickCustomerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCustName || !newCustMobile) {
       setErrorMsg('Name and active WhatsApp mobile number are required!');
       return;
     }
-    
+
     // Simple mobile digits count validation
     if (newCustMobile.length < 10) {
       setErrorMsg('Please enter a valid 10-digit Indian WhatsApp mobile number.');
@@ -69,18 +69,22 @@ export default function BillingView({ products, customers, onAddInvoice, onQuick
       createdAt: new Date().toISOString()
     };
 
-    onQuickAddCustomer(newCust);
-    setSelectedCustomerId(newCust.id); // Auto select new customer
+    // Persist via the backend, then auto-select using the server-assigned id
+    // (the client-side id above is only a placeholder for the request body).
+    const created = await onQuickAddCustomer(newCust);
+    if (!created) return; // backend rejected it; App already surfaced the error
+
+    setSelectedCustomerId(created.id);
     setShowQuickAddCust(false);
-    
+
     // Clear fields
     setNewCustName('');
     setNewCustMobile('');
     setNewCustBusiness('');
     setNewCustGst('');
-    
+
     setErrorMsg('');
-    setSuccessMsg(`Customer ${newCust.name} created and auto-selected!`);
+    setSuccessMsg(`Customer ${created.name} created and auto-selected!`);
     setTimeout(() => setSuccessMsg(''), 4000);
   };
 
