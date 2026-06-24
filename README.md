@@ -10,7 +10,7 @@ low-stock alerts, customer ledgers, an outstanding-recovery console, and an
 [Ledgix Backend](../Ledgix%20Backend)).
 
 > Accounts and all business data live in the [Ledgix Backend](../Ledgix%20Backend)
-> (JWT auth + SQLite). On first run, create an account — the first one becomes the
+> (JWT auth + PostgreSQL). On first run, create an account — the first one becomes the
 > shop OWNER. The app starts with no data.
 
 ## Run locally
