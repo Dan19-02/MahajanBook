@@ -17,10 +17,12 @@ import {
   ArrowLeft,
   ShieldCheck,
   LogOut,
-  Loader2
+  Loader2,
+  Store as StoreIcon,
+  CreditCard
 } from 'lucide-react';
 
-import { Product, Customer, Invoice, Transaction, WhatsAppReminder, User, UserRole, Business } from './types';
+import { Product, Customer, Invoice, Transaction, WhatsAppReminder, User, UserRole, Account, Store } from './types';
 import {
   me,
   bootstrap,
@@ -38,11 +40,16 @@ import {
   reconcileInvoice,
   sendReminder,
   clearData,
-  updateBusiness,
+  updateStore,
   getToken,
   clearToken,
+  getActiveStoreId,
+  setActiveStoreId,
+  clearActiveStoreId,
   setUnauthorizedHandler,
   type Snapshot,
+  type Session,
+  type StoreProfileFields,
   type CreateInvoicePayload
 } from './services/api';
 
@@ -56,17 +63,22 @@ import OutstandingView from './components/OutstandingView';
 import TodaysBillsView from './components/TodaysBillsView';
 import DayBookView from './components/DayBookView';
 import SettingsView from './components/SettingsView';
+import PlansView from './components/PlansView';
 import InvoiceReceipt from './components/InvoiceReceipt';
 
 const errMsg = (e: unknown): string => (e instanceof Error ? e.message : 'Something went wrong.');
 
 export default function App() {
-  // Auth
+  // Auth + account/stores
   const [token, setTokenState] = useState<string | null>(() => getToken());
   const [user, setUser] = useState<User | null>(null);
-  const [business, setBusiness] = useState<Business | null>(null);
+  const [account, setAccount] = useState<Account | null>(null);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [activeStoreId, setActiveStoreIdState] = useState<string | null>(() => getActiveStoreId());
   const [authChecked, setAuthChecked] = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
+
+  const activeStore = stores.find((s) => s.id === activeStoreId) ?? null;
 
   // Shared application data (from the backend)
   const [products, setProducts] = useState<Product[]>([]);
@@ -109,19 +121,30 @@ export default function App() {
       .forEach((key) => localStorage.removeItem(key));
   }, []);
 
+  const adoptSession = (s: Session) => {
+    setUser(s.user);
+    setAccount(s.account);
+    setStores(s.stores);
+    const id = s.activeStoreId ?? s.stores[0]?.id ?? null;
+    setActiveStoreIdState(id);
+    if (id) setActiveStoreId(id);
+  };
+
   // Log out if any request reports an expired/invalid token.
   useEffect(() => {
     setUnauthorizedHandler(() => {
       setTokenState(null);
       setUser(null);
-      setBusiness(null);
+      setAccount(null);
+      setStores([]);
+      setActiveStoreIdState(null);
       clearLocalData();
       setActiveTab('dashboard');
       setNavHistory([]);
     });
   }, []);
 
-  // Load the session + data whenever the token changes.
+  // Load the session + active-store data whenever the token changes.
   useEffect(() => {
     if (!token) {
       setAuthChecked(true);
@@ -131,16 +154,18 @@ export default function App() {
     (async () => {
       setDataLoading(true);
       try {
-        const profile = await me();
+        const session = await me();
         if (cancelled) return;
-        setUser(profile.user);
-        setBusiness(profile.business);
-        const snap = await bootstrap();
-        if (cancelled) return;
-        applySnapshot(snap);
+        adoptSession(session);
+        if (session.activeStoreId ?? session.stores[0]?.id) {
+          const snap = await bootstrap();
+          if (cancelled) return;
+          applySnapshot(snap);
+        }
       } catch {
         if (!cancelled) {
           clearToken();
+          clearActiveStoreId();
           setTokenState(null);
           setUser(null);
         }
@@ -156,18 +181,42 @@ export default function App() {
     };
   }, [token]);
 
+  // Reload the data snapshot for the active store (after switching stores).
+  const reloadForActiveStore = async () => {
+    setDataLoading(true);
+    try {
+      applySnapshot(await bootstrap());
+    } catch (e) {
+      showHeaderAlert(errMsg(e), 'alert');
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  const handleSwitchStore = (storeId: string) => {
+    if (storeId === activeStoreId) return;
+    setActiveStoreId(storeId);
+    setActiveStoreIdState(storeId);
+    setMobileMenuOpen(false);
+    void reloadForActiveStore();
+  };
+
   // --- Auth handlers ---
-  const handleAuthenticated = (newToken: string, newUser: User, newBusiness: Business) => {
-    setUser(newUser);
-    setBusiness(newBusiness);
-    setTokenState(newToken); // triggers the load effect
+  // register()/login() already stored the token + active store; reflect it in
+  // state (which also triggers the load effect to fetch the snapshot).
+  const handleAuthenticated = (session: Session) => {
+    adoptSession(session);
+    setTokenState(getToken());
   };
 
   const handleLogout = () => {
     clearToken();
+    clearActiveStoreId();
     setTokenState(null);
     setUser(null);
-    setBusiness(null);
+    setAccount(null);
+    setStores([]);
+    setActiveStoreIdState(null);
     clearLocalData();
     setActiveTab('dashboard');
     setNavHistory([]);
@@ -310,10 +359,12 @@ export default function App() {
     }
   };
 
-  const handleUpdateBusiness = async (fields: Partial<Pick<Business, 'name' | 'address' | 'gstIn' | 'phone' | 'logo' | 'upiVpa' | 'gstRate'>>) => {
+  // Update the active store's profile (printed on its bills).
+  const handleUpdateStore = async (fields: StoreProfileFields) => {
+    if (!activeStore) return;
     try {
-      const { business: updated } = await updateBusiness(fields);
-      setBusiness(updated);
+      const { stores: updated } = await updateStore(activeStore.id, fields);
+      setStores(updated);
       showHeaderAlert('Shop profile updated.', 'success');
     } catch (e) {
       showHeaderAlert(errMsg(e), 'alert');
@@ -328,6 +379,7 @@ export default function App() {
     { id: 'customers', label: 'Ledger Accounts', icon: Users },
     { id: 'outstanding', label: 'Overdue & Recovery', icon: DollarSign },
     { id: 'daybook', label: 'Day Book', icon: ClipboardList },
+    { id: 'plans', label: 'Plans & Billing', icon: CreditCard },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
@@ -338,6 +390,7 @@ export default function App() {
     customers: 'Ledger Accounts',
     outstanding: 'Overdue & Recovery',
     daybook: 'Day Book',
+    plans: 'Plans & Billing',
     settings: 'Settings',
     'todays-bills': "Today's Bills",
   };
@@ -366,12 +419,30 @@ export default function App() {
     );
   }
 
-  if (!token || !user || !business) {
+  if (!token || !user || !account) {
     return <LoginView onAuthenticated={handleAuthenticated} />;
   }
 
   const initials = user.name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
   const isOwner = user.role === UserRole.OWNER;
+
+  // Staff with no store assigned yet can't operate on any data.
+  if (!activeStore) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 text-center">
+        <div className="max-w-sm bg-white border border-slate-200 rounded-2xl shadow-sm p-8 space-y-3">
+          <StoreIcon className="w-8 h-8 text-slate-300 mx-auto" />
+          <h2 className="text-lg font-bold text-slate-800">No store assigned</h2>
+          <p className="text-sm text-slate-500">
+            Your login isn’t assigned to a store yet. Ask the owner of <strong>{account.name}</strong> to give you access under Settings → Staff.
+          </p>
+          <button onClick={handleLogout} className="mt-2 px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer">
+            Log out
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row text-slate-900 font-sans">
@@ -406,8 +477,30 @@ export default function App() {
             </div>
             <div className="min-w-0">
               <span className="font-extrabold text-slate-800 tracking-tight block text-xl">CreditFlow</span>
-              <span className="text-[10px] text-indigo-600 font-bold tracking-wider uppercase block truncate">{business.name}</span>
+              <span className="text-[10px] text-indigo-600 font-bold tracking-wider uppercase block truncate">{account.name}</span>
             </div>
+          </div>
+
+          {/* Active store switcher */}
+          <div className="px-5 py-3 border-b border-slate-100">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1 mb-1">
+              <StoreIcon className="w-3 h-3" /> Active store
+            </label>
+            {stores.length > 1 ? (
+              <select
+                value={activeStore.id}
+                onChange={(e) => handleSwitchStore(e.target.value)}
+                className="w-full px-2.5 py-2 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+              >
+                {stores.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}{s.locked ? ' (locked)' : ''}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p className="text-sm font-bold text-slate-700 truncate">{activeStore.name}</p>
+            )}
           </div>
 
           {/* Authenticated user */}
@@ -527,7 +620,7 @@ export default function App() {
             <BillingView
               products={products}
               customers={customers}
-              defaultGstRate={business.gstRate ?? 18}
+              defaultGstRate={activeStore.gstRate ?? 18}
               onAddInvoice={handleAddNewInvoice}
               onQuickAddCustomer={handleRegisterCustomer}
             />
@@ -559,7 +652,7 @@ export default function App() {
             <OutstandingView
               invoices={invoices}
               reminders={reminders}
-              business={business}
+              business={activeStore}
               onAutoReconcile={handleRazorpayAutoReconcile}
               onSendReminder={handleWhatsAppManualFire}
               onViewInvoice={setViewingInvoice}
@@ -577,23 +670,33 @@ export default function App() {
           )}
 
           {activeTab === 'daybook' && (
-            <DayBookView invoices={invoices} transactions={transactions} customers={customers} business={business} />
+            <DayBookView invoices={invoices} transactions={transactions} customers={customers} business={activeStore} />
+          )}
+
+          {activeTab === 'plans' && (
+            <PlansView account={account} isOwner={isOwner} onAccountChanged={setAccount} onNavigate={navigateTo} />
           )}
 
           {activeTab === 'settings' && (
             <SettingsView
               user={user}
-              business={business}
+              account={account}
+              stores={stores}
+              activeStore={activeStore}
               onLogout={handleLogout}
               onClearData={handleClearData}
-              onUpdateBusiness={handleUpdateBusiness}
+              onUpdateStore={handleUpdateStore}
+              onStoresChanged={setStores}
+              onAccountChanged={setAccount}
+              onSwitchStore={handleSwitchStore}
+              onGoToPlans={() => navigateTo('plans')}
             />
           )}
         </div>
       </main>
 
       {viewingInvoice && (
-        <InvoiceReceipt invoice={viewingInvoice} business={business} onClose={() => setViewingInvoice(null)} />
+        <InvoiceReceipt invoice={viewingInvoice} business={activeStore} onClose={() => setViewingInvoice(null)} />
       )}
     </div>
   );

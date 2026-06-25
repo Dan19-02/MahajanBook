@@ -11,16 +11,26 @@ import type {
   WhatsAppReminder,
   User,
   Business,
+  Store,
+  Account,
+  Plan,
+  StaffMember,
   PaymentStatus,
 } from '../types';
 
 const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3001').replace(/\/+$/, '');
 const TOKEN_KEY = 'cf_token';
+const STORE_KEY = 'cf_store';
 
 // ---- Token storage ----
 export const getToken = (): string | null => localStorage.getItem(TOKEN_KEY);
 export const setToken = (token: string): void => localStorage.setItem(TOKEN_KEY, token);
 export const clearToken = (): void => localStorage.removeItem(TOKEN_KEY);
+
+// ---- Active store (sent as X-Store-Id so the backend scopes data per store) ----
+export const getActiveStoreId = (): string | null => localStorage.getItem(STORE_KEY);
+export const setActiveStoreId = (id: string): void => localStorage.setItem(STORE_KEY, id);
+export const clearActiveStoreId = (): void => localStorage.removeItem(STORE_KEY);
 
 let onUnauthorized: (() => void) | null = null;
 export const setUnauthorizedHandler = (fn: () => void): void => {
@@ -35,6 +45,8 @@ async function request<T>(path: string, options: { method?: string; body?: unkno
   if (auth) {
     const token = getToken();
     if (token) headers.Authorization = `Bearer ${token}`;
+    const storeId = getActiveStoreId();
+    if (storeId) headers['X-Store-Id'] = storeId;
   }
 
   let res: Response;
@@ -50,6 +62,7 @@ async function request<T>(path: string, options: { method?: string; body?: unkno
 
   if (res.status === 401 && auth) {
     clearToken();
+    clearActiveStoreId();
     onUnauthorized?.();
     throw new Error('Your session has expired. Please log in again.');
   }
@@ -70,16 +83,26 @@ export interface Snapshot {
   reminders: WhatsAppReminder[];
 }
 
-// ---- Auth ----
-export interface AuthResult {
-  token: string;
+// ---- Auth / session ----
+export interface Session {
   user: User;
-  business: Business;
+  account: Account;
+  stores: Store[];
+  activeStoreId: string | null;
+}
+export interface AuthResult extends Session {
+  token: string;
 }
 
 export interface RegisterOptions {
   businessName?: string;
   inviteCode?: string;
+}
+
+/** Persists the token + a sensible active store from an auth/session payload. */
+function adoptSession(s: { activeStoreId?: string | null; stores?: Store[] }): void {
+  const id = s.activeStoreId ?? s.stores?.[0]?.id ?? null;
+  if (id) setActiveStoreId(id);
 }
 
 export async function register(name: string, email: string, password: string, options: RegisterOptions): Promise<AuthResult> {
@@ -89,17 +112,22 @@ export async function register(name: string, email: string, password: string, op
     body: { name, email, password, ...options },
   });
   setToken(result.token);
+  adoptSession(result);
   return result;
 }
 
 export async function login(email: string, password: string): Promise<AuthResult> {
   const result = await request<AuthResult>('/api/auth/login', { method: 'POST', auth: false, body: { email, password } });
   setToken(result.token);
+  adoptSession(result);
   return result;
 }
 
-export const me = (): Promise<{ user: User; business: Business }> =>
-  request<{ user: User; business: Business }>('/api/auth/me');
+export async function me(): Promise<Session> {
+  const s = await request<Session>('/api/auth/me');
+  adoptSession(s);
+  return s;
+}
 
 // ---- Data ----
 export const bootstrap = (): Promise<Snapshot> => request<Snapshot>('/api/bootstrap');
@@ -155,11 +183,53 @@ export const deleteCustomer = (id: string): Promise<Snapshot> =>
 export const deleteInvoice = (id: string): Promise<Snapshot> =>
   request<Snapshot>(`/api/invoices/${id}`, { method: 'DELETE' });
 
-// ---- Shop profile ----
-export const updateBusiness = (
-  fields: Partial<Pick<Business, 'name' | 'address' | 'gstIn' | 'phone' | 'logo' | 'upiVpa' | 'gstRate'>>,
-): Promise<{ business: Business }> =>
-  request<{ business: Business }>('/api/business', { method: 'PATCH', body: fields });
+// ---- Stores (per-store shop profile) ----
+export type StoreProfileFields = Partial<Pick<Business, 'name' | 'address' | 'gstIn' | 'phone' | 'logo' | 'upiVpa' | 'gstRate'>>;
+
+export const updateStore = (storeId: string, fields: StoreProfileFields): Promise<{ business: Store; stores: Store[] }> =>
+  request<{ business: Store; stores: Store[] }>(`/api/stores/${storeId}`, { method: 'PATCH', body: fields });
+
+export const listStores = (): Promise<{ stores: Store[] }> => request<{ stores: Store[] }>('/api/stores');
+
+export const createStore = (name: string): Promise<{ store: Store; stores: Store[] }> =>
+  request<{ store: Store; stores: Store[] }>('/api/stores', { method: 'POST', body: { name } });
+
+export const lockStore = (id: string): Promise<{ stores: Store[] }> =>
+  request<{ stores: Store[] }>(`/api/stores/${id}/lock`, { method: 'POST' });
+
+export const unlockStore = (id: string): Promise<{ stores: Store[] }> =>
+  request<{ stores: Store[] }>(`/api/stores/${id}/unlock`, { method: 'POST' });
+
+// ---- Account & plan ----
+export const getAccount = (): Promise<{ account: Account }> => request<{ account: Account }>('/api/account');
+
+export const setPlanDirect = (plan: Plan): Promise<{ account: Account }> =>
+  request<{ account: Account }>('/api/account/plan', { method: 'POST', body: { plan } });
+
+// ---- Staff ----
+export const listStaff = (): Promise<{ staff: StaffMember[] }> => request<{ staff: StaffMember[] }>('/api/staff');
+
+export const setStaffStores = (userId: string, storeIds: string[]): Promise<{ staff: StaffMember[] }> =>
+  request<{ staff: StaffMember[] }>(`/api/staff/${userId}/stores`, { method: 'PUT', body: { storeIds } });
+
+// ---- Billing (Razorpay subscriptions) ----
+export interface SubscribeResult {
+  keyId: string;
+  subscriptionId: string;
+  plan: Plan;
+}
+
+export const subscribe = (plan: Plan): Promise<SubscribeResult> =>
+  request<SubscribeResult>('/api/billing/subscribe', { method: 'POST', body: { plan } });
+
+export interface VerifyPaymentPayload {
+  razorpay_payment_id: string;
+  razorpay_subscription_id: string;
+  razorpay_signature: string;
+}
+
+export const verifySubscription = (payload: VerifyPaymentPayload): Promise<{ account: Account }> =>
+  request<{ account: Account }>('/api/billing/verify', { method: 'POST', body: payload });
 
 // ---- AI (MiniMax-M3) ----
 export type ReminderTone = 'gentle' | 'due_today' | 'overdue' | 'serious' | 'final';
@@ -186,6 +256,7 @@ export interface BackendHealth {
   status: string;
   aiConfigured: boolean;
   whatsappConfigured: boolean;
+  billingConfigured?: boolean;
   model: string;
 }
 

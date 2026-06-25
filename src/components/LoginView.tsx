@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { ShieldCheck, Loader2, Building2, KeyRound } from 'lucide-react';
-import { login, register } from '../services/api';
-import type { User, Business } from '../types';
+import { login, register, type Session } from '../services/api';
 
 interface LoginViewProps {
-  onAuthenticated: (token: string, user: User, business: Business) => void;
+  onAuthenticated: (session: Session) => void;
 }
 
 export default function LoginView({ onAuthenticated }: LoginViewProps) {
@@ -35,7 +34,7 @@ export default function LoginView({ onAuthenticated }: LoginViewProps) {
             regMode === 'join' ? { inviteCode: inviteCode.trim() } : { businessName: businessName.trim() },
           )
         : await login(email.trim(), password);
-      onAuthenticated(result.token, result.user, result.business);
+      onAuthenticated(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
     } finally {

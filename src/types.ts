@@ -7,8 +7,35 @@ export enum UserRole {
   STAFF = 'STAFF'
 }
 
+export type Plan = 'STARTER' | 'GROWTH' | 'UNLIMITED';
+
+/** Plan limits; `null` means unlimited. Mirrors the backend's serialized limits. */
+export interface PlanLimits {
+  label: string;
+  priceMonthly: number;
+  stores: number | null;
+  staff: number | null;
+  reminderCap: number | null;
+}
+
+/** The billing entity (owner's organisation) that holds the subscription plan. */
+export interface Account {
+  id: string;
+  name: string;
+  joinCode: string;
+  plan: Plan;
+  razorpaySubscriptionId?: string;
+  subscriptionStatus?: string;
+  currentPeriodEnd?: string;
+  limits: PlanLimits;
+  usage: { stores: number; staff: number; remindersThisMonth: number };
+  createdAt: string;
+}
+
+/** A store. (The backend table is `businesses` for historical reasons.) */
 export interface Business {
   id: string;
+  accountId: string;
   name: string;
   joinCode: string;
   address?: string;
@@ -17,15 +44,29 @@ export interface Business {
   logo?: string;
   upiVpa?: string;
   gstRate?: number; // default GST % applied on bills (defaults to 18)
+  locked?: boolean; // true when locked out by a plan downgrade (read-only)
   createdAt: string;
 }
+
+/** Alias to read clearly in multi-store code. */
+export type Store = Business;
 
 export interface User {
   id: string;
   name: string;
   email: string;
   role: UserRole;
+  accountId: string;
   businessId: string;
+}
+
+/** A user in the account with the stores they can access (for staff management). */
+export interface StaffMember {
+  id: string;
+  name: string;
+  email: string;
+  role: 'OWNER' | 'STAFF';
+  storeIds: string[];
 }
 
 export interface Product {
