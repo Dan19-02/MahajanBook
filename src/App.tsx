@@ -629,6 +629,7 @@ export default function App() {
           {activeTab === 'inventory' && (
             <InventoryView
               products={products}
+              storeName={activeStore.name}
               onAddProduct={handleCommitProduct}
               onUpdateStock={handleQuickAddStock}
               onUpdateProduct={handleUpdateProduct}

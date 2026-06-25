@@ -1,9 +1,11 @@
 import React, { useRef, useState } from 'react';
-import { Search, Plus, AlertTriangle, Pencil, Trash2, Upload, FileDown, PackagePlus } from 'lucide-react';
+import { Search, Plus, AlertTriangle, Pencil, Trash2, Upload, FileDown, PackagePlus, Barcode } from 'lucide-react';
 import { Product } from '../types';
+import BarcodeLabel from './BarcodeLabel';
 
 interface InventoryViewProps {
   products: Product[];
+  storeName?: string;
   onAddProduct: (product: Product) => void;
   onUpdateStock: (productId: string, newStock: number) => void;
   onUpdateProduct: (id: string, fields: Partial<Omit<Product, 'id' | 'createdAt'>>) => void;
@@ -59,10 +61,11 @@ function parseCsv(text: string): Record<string, string>[] {
   });
 }
 
-export default function InventoryView({ products, onAddProduct, onUpdateStock, onUpdateProduct, onDeleteProduct, onImportProducts }: InventoryViewProps) {
+export default function InventoryView({ products, storeName, onAddProduct, onUpdateStock, onUpdateProduct, onDeleteProduct, onImportProducts }: InventoryViewProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [labelProduct, setLabelProduct] = useState<Product | null>(null);
 
   // Create / edit product state
   const [showAddForm, setShowAddForm] = useState(false);
@@ -423,6 +426,13 @@ export default function InventoryView({ products, onAddProduct, onUpdateStock, o
                           +50
                         </button>
                         <button
+                          onClick={() => setLabelProduct(p)}
+                          className="bg-slate-100 hover:bg-slate-200 text-slate-700 rounded px-2 py-1.5 transition-colors cursor-pointer"
+                          title="Print barcode label"
+                        >
+                          <Barcode className="w-3.5 h-3.5" />
+                        </button>
+                        <button
                           onClick={() => handleEdit(p)}
                           className="bg-slate-100 hover:bg-slate-200 text-slate-700 rounded px-2 py-1.5 transition-colors cursor-pointer"
                           title="Edit product"
@@ -452,6 +462,10 @@ export default function InventoryView({ products, onAddProduct, onUpdateStock, o
           </table>
         </div>
       </div>
+
+      {labelProduct && (
+        <BarcodeLabel product={labelProduct} storeName={storeName} onClose={() => setLabelProduct(null)} />
+      )}
     </div>
   );
 }
