@@ -6,11 +6,12 @@ import type { CreateInvoicePayload } from '../services/api';
 interface BillingViewProps {
   products: Product[];
   customers: Customer[];
+  defaultGstRate: number;
   onAddInvoice: (payload: CreateInvoicePayload) => Promise<boolean>;
   onQuickAddCustomer: (customer: Customer) => Promise<Customer | null>;
 }
 
-export default function BillingView({ products, customers, onAddInvoice, onQuickAddCustomer }: BillingViewProps) {
+export default function BillingView({ products, customers, defaultGstRate, onAddInvoice, onQuickAddCustomer }: BillingViewProps) {
   // Selection
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -24,7 +25,7 @@ export default function BillingView({ products, customers, onAddInvoice, onQuick
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(PaymentStatus.PAID);
   const [ptpDate, setPtpDate] = useState<string>('');
   const [discount, setDiscount] = useState<number>(0);
-  const [taxRate] = useState<number>(18); // 18% standard GST
+  const [taxRate, setTaxRate] = useState<number>(defaultGstRate); // shop default GST %, editable per bill
 
   // Feedbacks
   const [errorMsg, setErrorMsg] = useState<string>('');
@@ -199,6 +200,7 @@ export default function BillingView({ products, customers, onAddInvoice, onQuick
       paymentStatus,
       ptpDate: paymentStatus === PaymentStatus.CREDIT ? ptpDate : undefined,
       discount,
+      taxRate,
       items: cart.map((ci) => ({ productId: ci.productId, quantity: ci.quantity })),
     });
     setSubmitting(false);
@@ -548,7 +550,20 @@ export default function BillingView({ products, customers, onAddInvoice, onQuick
                 />
               </div>
               <div className="flex justify-between items-center animate-fadeIn">
-                <span>Calculated tax (18% flat Standard GST)</span>
+                <span className="flex items-center gap-1.5">
+                  GST
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.5"
+                    value={taxRate}
+                    onChange={(e) => setTaxRate(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+                    className="w-14 text-right font-semibold border rounded p-1 text-xs"
+                    title="GST % for this bill (default from Settings)"
+                  />
+                  %
+                </span>
                 <span className="font-semibold text-gray-800">+ ₹{totals.taxAmount.toLocaleString('en-IN')}</span>
               </div>
               <div className="border-t border-gray-50 pt-3.5 flex justify-between items-end">

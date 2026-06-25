@@ -118,6 +118,7 @@ export interface CreateInvoicePayload {
   paymentStatus: PaymentStatus;
   ptpDate?: string;
   discount: number;
+  taxRate?: number;
   items: { productId: string; quantity: number }[];
 }
 
@@ -156,7 +157,7 @@ export const deleteInvoice = (id: string): Promise<Snapshot> =>
 
 // ---- Shop profile ----
 export const updateBusiness = (
-  fields: Partial<Pick<Business, 'name' | 'address' | 'gstIn' | 'phone' | 'logo' | 'upiVpa'>>,
+  fields: Partial<Pick<Business, 'name' | 'address' | 'gstIn' | 'phone' | 'logo' | 'upiVpa' | 'gstRate'>>,
 ): Promise<{ business: Business }> =>
   request<{ business: Business }>('/api/business', { method: 'PATCH', body: fields });
 

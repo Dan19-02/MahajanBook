@@ -22,7 +22,7 @@ interface SettingsViewProps {
   business: Business;
   onLogout: () => void;
   onClearData: () => void;
-  onUpdateBusiness: (fields: Partial<Pick<Business, 'name' | 'address' | 'gstIn' | 'phone' | 'logo' | 'upiVpa'>>) => Promise<void>;
+  onUpdateBusiness: (fields: Partial<Pick<Business, 'name' | 'address' | 'gstIn' | 'phone' | 'logo' | 'upiVpa' | 'gstRate'>>) => Promise<void>;
 }
 
 export default function SettingsView({ user, business, onLogout, onClearData, onUpdateBusiness }: SettingsViewProps) {
@@ -42,6 +42,7 @@ export default function SettingsView({ user, business, onLogout, onClearData, on
   const [bizGstin, setBizGstin] = useState(business.gstIn ?? '');
   const [bizPhone, setBizPhone] = useState(business.phone ?? '');
   const [bizUpi, setBizUpi] = useState(business.upiVpa ?? '');
+  const [bizGstRate, setBizGstRate] = useState(business.gstRate ?? 18);
   const [bizLogo, setBizLogo] = useState(business.logo ?? '');
   const [savedProfile, setSavedProfile] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
@@ -79,6 +80,7 @@ export default function SettingsView({ user, business, onLogout, onClearData, on
       gstIn: bizGstin.trim(),
       phone: bizPhone.trim(),
       upiVpa: bizUpi.trim(),
+      gstRate: Math.min(100, Math.max(0, bizGstRate)),
       logo: bizLogo,
     });
     setProfileSaving(false);
@@ -195,6 +197,16 @@ export default function SettingsView({ user, business, onLogout, onClearData, on
           <div>
             <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">GSTIN</label>
             <input type="text" disabled={!isOwner} value={bizGstin} onChange={(e) => setBizGstin(e.target.value)} placeholder="15-digit GSTIN" className={`${inputCls} font-mono`} />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Default GST Rate (%)</label>
+            <input
+              type="number" min="0" max="100" step="0.5" disabled={!isOwner}
+              value={bizGstRate}
+              onChange={(e) => setBizGstRate(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+              className={inputCls}
+            />
+            <p className="text-[10px] text-slate-400 mt-1">Pre-fills the GST % on new bills; still editable per bill.</p>
           </div>
           <div className="sm:col-span-2">
             <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">UPI ID</label>

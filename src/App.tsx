@@ -310,7 +310,7 @@ export default function App() {
     }
   };
 
-  const handleUpdateBusiness = async (fields: Partial<Pick<Business, 'name' | 'address' | 'gstIn' | 'phone' | 'logo' | 'upiVpa'>>) => {
+  const handleUpdateBusiness = async (fields: Partial<Pick<Business, 'name' | 'address' | 'gstIn' | 'phone' | 'logo' | 'upiVpa' | 'gstRate'>>) => {
     try {
       const { business: updated } = await updateBusiness(fields);
       setBusiness(updated);
@@ -527,6 +527,7 @@ export default function App() {
             <BillingView
               products={products}
               customers={customers}
+              defaultGstRate={business.gstRate ?? 18}
               onAddInvoice={handleAddNewInvoice}
               onQuickAddCustomer={handleRegisterCustomer}
             />

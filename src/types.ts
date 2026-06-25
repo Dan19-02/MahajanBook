@@ -16,6 +16,7 @@ export interface Business {
   phone?: string;
   logo?: string;
   upiVpa?: string;
+  gstRate?: number; // default GST % applied on bills (defaults to 18)
   createdAt: string;
 }
 
@@ -78,7 +79,8 @@ export interface Invoice {
   customerMobile: string;
   subtotal: number;
   discount: number;
-  tax: number; // e.g. 18% GST standard or calculated
+  tax: number; // GST amount in ₹
+  taxRate?: number; // GST % used for this invoice (defaults to 18)
   grandTotal: number;
   paymentStatus: PaymentStatus;
   ptpDate?: string; // Promise To Pay Date (ISO string or YYYY-MM-DD)

@@ -103,7 +103,7 @@ export default function InvoiceReceipt({ invoice, business, onClose }: InvoiceRe
             {invoice.discount > 0 && (
               <div className="flex justify-between"><span className="text-slate-500">Discount</span><span>− ₹{inr(invoice.discount)}</span></div>
             )}
-            <div className="flex justify-between"><span className="text-slate-500">GST (18%)</span><span>+ ₹{inr(invoice.tax)}</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">GST ({invoice.taxRate ?? 18}%)</span><span>+ ₹{inr(invoice.tax)}</span></div>
             <div className="flex justify-between border-t border-slate-300 mt-1 pt-1.5 text-sm font-bold">
               <span>Grand Total</span><span>₹{inr(invoice.grandTotal)}</span>
             </div>
