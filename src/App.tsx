@@ -19,7 +19,8 @@ import {
   LogOut,
   Loader2,
   Store as StoreIcon,
-  CreditCard
+  CreditCard,
+  BookText
 } from 'lucide-react';
 
 import { Product, Customer, Invoice, Transaction, WhatsAppReminder, User, UserRole, Account, Store } from './types';
@@ -117,7 +118,7 @@ export default function App() {
 
   // Purge legacy localStorage demo data from older versions (now ignored).
   useEffect(() => {
-    ['cf_products', 'cf_customers', 'cf_invoices', 'cf_transactions', 'cf_reminders', 'cf_role']
+    ['cf_products', 'cf_customers', 'cf_invoices', 'cf_transactions', 'cf_reminders', 'cf_role', 'cf_token', 'cf_store']
       .forEach((key) => localStorage.removeItem(key));
   }, []);
 
@@ -450,10 +451,10 @@ export default function App() {
       {/* Mobile Top App Bar */}
       <div className="md:hidden bg-white border-b border-slate-200 px-4 py-3.5 flex justify-between items-center shadow-sm z-30">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-extrabold text-sm">
-            C
+          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+            <BookText className="w-5 h-5" />
           </div>
-          <span className="font-bold text-slate-800 tracking-tight">CreditFlow</span>
+          <span className="font-bold text-slate-800 tracking-tight">MahajanBook</span>
         </div>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -472,11 +473,11 @@ export default function App() {
         <div>
           {/* Brand */}
           <div className="p-6 border-b border-slate-100 flex items-center gap-3">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">
-              C
+            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white">
+              <BookText className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <span className="font-extrabold text-slate-800 tracking-tight block text-xl">CreditFlow</span>
+              <span className="font-extrabold text-slate-800 tracking-tight block text-xl">MahajanBook</span>
               <span className="text-[10px] text-indigo-600 font-bold tracking-wider uppercase block truncate">{account.name}</span>
             </div>
           </div>
@@ -551,7 +552,7 @@ export default function App() {
 
         {/* Footer */}
         <div className="p-4 border-t border-slate-100 text-center font-mono text-[9px] text-slate-400">
-          <span className="font-bold">CreditFlow · Ledgix v1.0.0</span>
+          <span className="font-bold">MahajanBook v1.0.0</span>
           <p className="mt-0.5">Automated recovery engine: Active</p>
         </div>
       </aside>

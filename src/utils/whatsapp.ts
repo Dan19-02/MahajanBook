@@ -50,7 +50,7 @@ export function buildReminderMessage(
 
 /** A simple ad-hoc nudge for an outstanding invoice (used from the invoice list). */
 export function buildInvoiceNudge(invoice: Invoice, businessName: string): string {
-  const link = `https://rzp.io/i/cf_${invoice.invoiceNumber.toLowerCase()}`;
+  const link = `https://rzp.io/i/mb_${invoice.invoiceNumber.toLowerCase()}`;
   const due = invoice.ptpDate ? ` (due ${invoice.ptpDate})` : '';
   return `Hello ${invoice.customerName}, a reminder from ${businessName}: invoice #${invoice.invoiceNumber} of ${inr(invoice.grandTotal)}${due} is pending. Please pay here: ${link}. Thank you!`;
 }

@@ -179,7 +179,7 @@ export default function InventoryView({ products, storeName, onAddProduct, onUpd
     const url = URL.createObjectURL(new Blob([sample], { type: 'text/csv' }));
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'ledgix-products-template.csv';
+    a.download = 'mahajanbook-products-template.csv';
     a.click();
     URL.revokeObjectURL(url);
   };

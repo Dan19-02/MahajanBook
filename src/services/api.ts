@@ -1,5 +1,5 @@
 /**
- * Client for the Ledgix Backend. Holds the JWT, attaches it to every request,
+ * Client for the MahajanBook backend. Holds the JWT, attaches it to every request,
  * and exposes auth + data + AI calls. All business data lives in the backend's
  * shared database; the browser only talks to the API.
  */
@@ -19,8 +19,8 @@ import type {
 } from '../types';
 
 const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3001').replace(/\/+$/, '');
-const TOKEN_KEY = 'cf_token';
-const STORE_KEY = 'cf_store';
+const TOKEN_KEY = 'mb_token';
+const STORE_KEY = 'mb_store';
 
 // ---- Token storage ----
 export const getToken = (): string | null => localStorage.getItem(TOKEN_KEY);
@@ -57,7 +57,7 @@ async function request<T>(path: string, options: { method?: string; body?: unkno
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
-    throw new Error(`Could not reach the Ledgix Backend at ${API_URL}. Is it running?`);
+    throw new Error(`Could not reach the MahajanBook backend at ${API_URL}. Is it running?`);
   }
 
   if (res.status === 401 && auth) {

@@ -82,7 +82,7 @@ export default function DashboardView({ products, customers, invoices, onNavigat
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200/85 shadow-sm">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-800 font-sans">
-            CreditFlow Live Monitor
+            MahajanBook Live Monitor
           </h1>
           <p className="text-sm text-slate-500 mt-1">
             Real-time shop billing ledger & Automated WhatsApp Recovery console.

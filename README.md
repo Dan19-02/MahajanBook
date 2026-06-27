@@ -1,4 +1,4 @@
-# CreditFlow (Ledgix) — Frontend
+# MahajanBook — Frontend
 
 A mobile-first **ledger, billing, and AI-assisted credit-recovery** console for
 Indian retail and wholesale shops. Built with **React 19 + Vite + TypeScript +
@@ -7,9 +7,9 @@ Tailwind CSS v4**.
 Features: express billing (dynamic retail/wholesale pricing), inventory with
 low-stock alerts, customer ledgers, an outstanding-recovery console, and an
 **AI WhatsApp reminder drafter** powered by MiniMax-M3 (served by the
-[Ledgix Backend](../Ledgix%20Backend)).
+[MahajanBook backend](../Ledgix%20Backend)).
 
-> Accounts and all business data live in the [Ledgix Backend](../Ledgix%20Backend)
+> Accounts and all business data live in the [MahajanBook backend](../Ledgix%20Backend)
 > (JWT auth + PostgreSQL). On first run, create an account — the first one becomes the
 > shop OWNER. The app starts with no data.
 
@@ -29,7 +29,7 @@ low-stock alerts, customer ledgers, an outstanding-recovery console, and an
    ```
 
 For the **✨ Draft with AI** feature in the Reminders console, also run the
-[Ledgix Backend](../Ledgix%20Backend).
+[MahajanBook backend](../Ledgix%20Backend).
 
 ## Scripts
 

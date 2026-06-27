@@ -122,7 +122,7 @@ export default function PlansView({ account, isOwner, onAccountChanged, onNaviga
         key: keyId,
         subscription_id: subscriptionId,
         name: account.name,
-        description: `${TIERS.find((t) => t.plan === plan)?.name} plan — CreditFlow`,
+        description: `${TIERS.find((t) => t.plan === plan)?.name} plan — MahajanBook`,
         theme: { color: '#4f46e5' },
         handler: async (resp: unknown) => {
           const r = resp as { razorpay_payment_id: string; razorpay_subscription_id: string; razorpay_signature: string };

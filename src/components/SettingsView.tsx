@@ -563,7 +563,7 @@ export default function SettingsView({
         </div>
       )}
 
-      <p className="text-center text-[10px] text-slate-400 font-mono pb-2">CreditFlow · Ledgix v1.0.0</p>
+      <p className="text-center text-[10px] text-slate-400 font-mono pb-2">MahajanBook v1.0.0</p>
     </div>
   );
 }

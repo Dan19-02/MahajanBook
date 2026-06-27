@@ -1,5 +1,5 @@
 /**
- * CreditFlow Types & Schema Definitions
+ * MahajanBook Types & Schema Definitions
  */
 
 export enum UserRole {

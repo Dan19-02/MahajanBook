@@ -123,7 +123,7 @@ export default function InvoiceReceipt({ invoice, business, onClose }: InvoiceRe
           {/* Footer */}
           <div className="text-center border-t border-dashed border-slate-300 mt-3 pt-3 text-[10px] text-slate-500">
             <p className="font-sans">Thank you for your business!</p>
-            <p className="mt-0.5">Powered by CreditFlow</p>
+            <p className="mt-0.5">Powered by MahajanBook</p>
           </div>
         </div>
       </div>

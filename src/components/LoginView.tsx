@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Loader2, Building2, KeyRound } from 'lucide-react';
+import { ShieldCheck, Loader2, Building2, KeyRound, BookText } from 'lucide-react';
 import { login, register, type Session } from '../services/api';
 
 interface LoginViewProps {
@@ -47,10 +47,10 @@ export default function LoginView({ onAuthenticated }: LoginViewProps) {
       <div className="w-full max-w-sm">
         {/* Brand */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-extrabold text-xl mb-3">
-            C
+          <div className="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center text-white mb-3">
+            <BookText className="w-7 h-7" />
           </div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-800">CreditFlow</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-800">MahajanBook</h1>
           <p className="text-xs text-indigo-600 font-bold uppercase tracking-wider">SaaS India POS</p>
         </div>
 
@@ -176,7 +176,7 @@ export default function LoginView({ onAuthenticated }: LoginViewProps) {
           )}
         </div>
 
-        <p className="text-center text-[10px] text-slate-400 mt-6">CreditFlow · Ledgix v1.0.0</p>
+        <p className="text-center text-[10px] text-slate-400 mt-6">MahajanBook v1.0.0</p>
       </div>
     </div>
   );

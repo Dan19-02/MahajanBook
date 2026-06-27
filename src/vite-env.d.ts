@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  /** Base URL of the Ledgix Backend (MiniMax-M3 AI features). */
+  /** Base URL of the MahajanBook backend (MiniMax-M3 AI features). */
   readonly VITE_API_URL?: string;
 }
 
