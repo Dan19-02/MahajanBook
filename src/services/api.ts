@@ -129,6 +129,46 @@ export async function me(): Promise<Session> {
   return s;
 }
 
+// ---- Google sign-in (via Butterbase) ----
+const BB_APP_ID = import.meta.env.VITE_BUTTERBASE_APP_ID;
+const BB_API_BASE = (import.meta.env.VITE_BUTTERBASE_API_BASE ?? 'https://api.butterbase.ai').replace(/\/+$/, '');
+
+/** True when Google sign-in is configured (a butterbase app id is present). */
+export const isGoogleAuthEnabled = (): boolean => Boolean(BB_APP_ID);
+
+/** URL that starts the butterbase-hosted Google OAuth flow, returning to the app root. */
+export function googleOAuthStartUrl(): string {
+  const redirectTo = `${window.location.origin}/`;
+  return `${BB_API_BASE}/auth/${BB_APP_ID}/oauth/google?redirect_to=${encodeURIComponent(redirectTo)}`;
+}
+
+/** A new Google user has no business yet — the UI must ask them to create or join one. */
+export interface NeedsBusiness {
+  needsBusiness: true;
+  profile: { email: string; name: string };
+}
+export type GoogleAuthResult = AuthResult | NeedsBusiness;
+export const isNeedsBusiness = (r: GoogleAuthResult): r is NeedsBusiness =>
+  (r as NeedsBusiness).needsBusiness === true;
+
+/**
+ * Exchanges a butterbase session token for a MahajanBook session. For a brand-new
+ * Google user, pass `businessName` (create, become OWNER) or `inviteCode` (join as
+ * STAFF); omit both to discover whether the user is new (returns `needsBusiness`).
+ */
+export async function googleAuthExchange(butterbaseToken: string, options: RegisterOptions = {}): Promise<GoogleAuthResult> {
+  const result = await request<GoogleAuthResult>('/api/auth/google', {
+    method: 'POST',
+    auth: false,
+    body: { butterbaseToken, ...options },
+  });
+  if (!isNeedsBusiness(result)) {
+    setToken(result.token);
+    adoptSession(result);
+  }
+  return result;
+}
+
 // ---- Data ----
 export const bootstrap = (): Promise<Snapshot> => request<Snapshot>('/api/bootstrap');
 
